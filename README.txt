@@ -12,7 +12,7 @@ Cosas que deben considerar:
 2. El diseño de la BD y el servicio que almacena en ella debe estar en correspondencia con la estructura de los registros.
 
 --------------------------------------------------------------------------------------------------
-Servidor de ftp:RebexTinySftpServer-Binaries-Latest
+Servidor de ftp:RebexTinySftpServer-Binaries-Latest v1.0.13 
   Server IP: 192.168.43.117 
   Server port: 	22 
   User:          	tester
