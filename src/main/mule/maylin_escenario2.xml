@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:crypto="http://www.mulesoft.org/schema/mule/crypto" xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/crypto http://www.mulesoft.org/schema/mule/crypto/current/mule-crypto.xsd">
+	<sftp:config name="SFTP_Config" doc:name="SFTP Config" doc:id="4e8fc9a9-2417-494d-838d-554038d2ab13" >
+		<sftp:connection host="localhost" username="tester" password="password" />
+	</sftp:config>
+	<crypto:jce-config name="Crypto_Jce" doc:name="Crypto Jce" doc:id="b8959c32-9401-40b9-8496-cccfa66eb97a" keystore="C:\Users\Maylin\AnypointStudio\Maylin-workspace\maylin_escenario2\src\main\resources\encKeystore.jceks" type="JCEKS" password="123456" >
+		<crypto:jce-key-infos >
+			<crypto:jce-symmetric-key-info keyId="AnyKeyID" alias="jksvalue" password="123456" />
+		</crypto:jce-key-infos>
+	</crypto:jce-config>
+	<flow name="maylin_escenario2Flow" doc:id="5df8e3d4-53b0-48eb-88a7-75039bd80e6b" >
+		<sftp:listener doc:name="On New or Updated File" doc:id="1d29c075-3f45-4f60-af41-7e95423ff895" config-ref="SFTP_Config" outputMimeType="text/json" watermarkEnabled="true" directory="/tester/">
+			<scheduling-strategy >
+				<fixed-frequency frequency="1" timeUnit="MINUTES" />
+			</scheduling-strategy>
+			<sftp:matcher filenamePattern="ciudadano.json"/>
+		</sftp:listener>
+		<batch:job jobName="maylin_escenario2Batch_Job" doc:id="150c81aa-5725-45ca-b27e-dfd8be59b649" >
+			<batch:process-records >
+				<batch:step name="Batch_Step" doc:id="118ebd4d-fab6-4d0e-a4cf-9263592d5b96" >
+					<set-variable value="#[payload.ciudadano]" doc:name="ciudadano" doc:id="b4e988f0-17a5-423c-b00a-6dbe989fe7c7" variableName="ciudadano"/>
+					<logger level="INFO" doc:name="Logger" doc:id="40e103ec-1b1e-4440-82e8-fa09af30fe28" />
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<logger level="INFO" doc:name="Logger" doc:id="91aedc55-f0e7-4228-a73b-aca29db3c912" />
+			</batch:on-complete>
+		</batch:job>
+		<crypto:jce-encrypt doc:name="Jce encrypt" doc:id="c665dc0b-dd13-4b90-9db2-37575871e7dd" algorithm="AES" config-ref="Crypto_Jce" keyId="AnyKeyID">
+						<ee:repeatable-file-store-stream inMemorySize="1024" />
+					</crypto:jce-encrypt>
+	</flow>
+</mule>
