@@ -1,6 +1,5 @@
 Escenario 2, ya esto se va poniendo interesante:
 
-
 Cada cierto tiempo un fichero es copiado a un SFTP, se desea implementar una solución que haga lo siguiente:
 1. Lea el contenido del fichero en el FTP que existe en ese momento y usando la funcionalidad batch extraiga dicho contenido.
 2. Por cada registro del fichero debe cifrarlo usando  AES 256  con el componente crypto de Mule. Cada registro cifrado debe ser almacenado en un fichero .txt.
@@ -11,3 +10,16 @@ Cada cierto tiempo un fichero es copiado a un SFTP, se desea implementar una sol
 Cosas que deben considerar:
 1. La estructura del fichero con los registros queda a discreción de ustedes, preferiblemente que contenga un registro de varios datos en texto plano. Pueden ser en formado json, en xml o pura cadena de texto con tabulaciones o separadores.
 2. El diseño de la BD y el servicio que almacena en ella debe estar en correspondencia con la estructura de los registros.
+
+--------------------------------------------------------------------------------------------------
+Servidor de ftp:RebexTinySftpServer-Binaries-Latest
+  Server IP: 192.168.43.117 
+  Server port: 	22 
+  User:          	tester
+  Password:      	password
+  User public keys:   	(disabled) 
+  User root directory: 	C:\RebexTinySftpServer-Binaries-Latest\data
+  Configuration file: 	C:\RebexTinySftpServer-Binaries-Latest\RebexTinySftpServer.exe.Config
+  
+
+
