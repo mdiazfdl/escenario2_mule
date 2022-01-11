@@ -1,20 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:crypto="http://www.mulesoft.org/schema/mule/crypto" xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
-	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
-	xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:crypto="http://www.mulesoft.org/schema/mule/crypto"
+	xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
 http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
-http://www.mulesoft.org/schema/mule/crypto http://www.mulesoft.org/schema/mule/crypto/current/mule-crypto.xsd">
+http://www.mulesoft.org/schema/mule/crypto http://www.mulesoft.org/schema/mule/crypto/current/mule-crypto.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
 	<sftp:config name="SFTP_Config" doc:name="SFTP Config" doc:id="4e8fc9a9-2417-494d-838d-554038d2ab13" >
 		<sftp:connection host="localhost" username="tester" password="password" />
 	</sftp:config>
-	<crypto:jce-config name="Crypto_Jce" doc:name="Crypto Jce" doc:id="b8959c32-9401-40b9-8496-cccfa66eb97a" keystore="C:\Users\Maylin\AnypointStudio\Maylin-workspace\maylin_escenario2\src\main\resources\encKeystore.jceks" type="JCEKS" password="123456" >
+	<crypto:jce-config name="Crypto_Jce" doc:name="Crypto Jce" doc:id="b8959c32-9401-40b9-8496-cccfa66eb97a" keystore="encKeystore.jceks" type="JCEKS" password="123456" >
 		<crypto:jce-key-infos >
 			<crypto:jce-symmetric-key-info keyId="AnyKeyID" alias="jksvalue" password="123456" />
 		</crypto:jce-key-infos>
 	</crypto:jce-config>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="07f8b0e9-8701-4053-b329-2663ef3347b3" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
 	<flow name="maylin_escenario2Flow" doc:id="5df8e3d4-53b0-48eb-88a7-75039bd80e6b" >
 		<sftp:listener doc:name="On New or Updated File" doc:id="1d29c075-3f45-4f60-af41-7e95423ff895" config-ref="SFTP_Config" outputMimeType="text/json" watermarkEnabled="true" directory="/tester/">
 			<scheduling-strategy >
@@ -33,8 +38,13 @@ http://www.mulesoft.org/schema/mule/crypto http://www.mulesoft.org/schema/mule/c
 				<logger level="INFO" doc:name="Logger" doc:id="91aedc55-f0e7-4228-a73b-aca29db3c912" />
 			</batch:on-complete>
 		</batch:job>
+	</flow>
+	<flow name="maylin_escenario2Flow1" doc:id="ef924530-1b78-4e1d-86bd-2f9e79dc3c24" >
+		<http:listener doc:name="Listener" doc:id="57324135-366b-432d-8cec-02381b18546e" config-ref="HTTP_Listener_config" path="/cifrar"/>
+		<sftp:read doc:name="Read" doc:id="6aca232f-8758-4dff-93a7-d79053845d9e" config-ref="SFTP_Config" path="/tester/ciudadano.json"/>
 		<crypto:jce-encrypt doc:name="Jce encrypt" doc:id="c665dc0b-dd13-4b90-9db2-37575871e7dd" algorithm="AES" config-ref="Crypto_Jce" keyId="AnyKeyID">
 						<ee:repeatable-file-store-stream inMemorySize="1024" />
 					</crypto:jce-encrypt>
+		<sftp:write doc:name="Write" doc:id="86bb279e-8c4e-41e6-a220-9f12531b5dca" config-ref="SFTP_Config" path="cifrado.txt"/>
 	</flow>
 </mule>
