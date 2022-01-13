@@ -1,26 +1,29 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
   <types:catalog>
-    <types:type name="ciudadano" format="json">
-      <types:shape format="weave" example="examples/ciudadano.json"><![CDATA[%dw 2.0
+    <types:type name="home" format="csv">
+      <types:shape format="weave" example="examples/homes-1.csv"><![CDATA[%dw 2.0
 
-type ciudadano = {|
-  ciudadanos: {|
-    ciudadano: Array<{|      "1ernombre": String,       "2donombre": String,       "1erapellido": String,       "2doapellido": String,       pais: String,       prov: String,       mun: String,       direccion: {|        calle: String,         entrecalles: String,         apto: String,         num: String      |}    |}>
-  |}
-|} {"example": "{\\\"ciudadanos\\\":{\\\"ciudadano\\\":[{\\\"1ernombre\\\":\\\"pepe\\\",\\\"2donombre\\\":\\\"pepon\\\",\\\"1erapellido\\\":\\\"de la calle\\\",\\\"2doapellido\\\":\\\"santos\\\",\\\"pais\\\":\\\"CUB\\\",\\\"prov\\\":\\\"HAB\\\",\\\"mun\\\":\\\"VEDADO\\\",\\\"direccion\\\":{\\\"calle\\\":\\\"Alcala\\\",\\\"entrecalles\\\":\\\"calle mercaderes y calle compostela\\\",\\\"apto\\\":\\\"909\\\",\\\"num\\\":\\\"21\\\"}},{\\\"1ernombre\\\":\\\"pepe\\\",\\\"2donombre\\\":\\\"pepon\\\",\\\"1erapellido\\\":\\\"de la calle\\\",\\\"2doapellido\\\":\\\"santos\\\",\\\"pais\\\":\\\"CUB\\\",\\\"prov\\\":\\\"HAB\\\",\\\"mun\\\":\\\"VEDADO\\\",\\\"direccion\\\":{\\\"calle\\\":\\\"Alcala\\\",\\\"entrecalles\\\":\\\"calle mercaderes y calle compostela\\\",\\\"apto\\\":\\\"909\\\",\\\"num\\\":\\\"21\\\"}}]}}"}
+type home = Array<{|  Sell: Number,   " List": Number,   " Living": Number,   " Rooms": Number,   " Beds": Number,   " Baths": Number,   " Age": Number,   " Acres": Number,   " Taxes": Number|}> {"isQuotedString": "false",
+"header": "true",
+"headerLineNumber": "0"}
 
 ]]></types:shape>
+      <types:properties>
+        <types:property name="headerLineNumber" value="0"/>
+        <types:property name="header" value="true"/>
+        <types:property name="isQuotedString" value="false"/>
+      </types:properties>
     </types:type>
   </types:catalog>
+  <types:enrichment select="#c3513e56-1fa9-4f7f-bc7f-fd7a0cec7b2b"/>
   <types:enrichment select="#1d29c075-3f45-4f60-af41-7e95423ff895">
     <types:processor-declaration>
       <types:output-event>
         <types:message>
-          <types:payload type="ciudadano"/>
+          <types:payload type="home"/>
         </types:message>
       </types:output-event>
     </types:processor-declaration>
   </types:enrichment>
-  <types:enrichment select="#c665dc0b-dd13-4b90-9db2-37575871e7dd"/>
 </types:mule>

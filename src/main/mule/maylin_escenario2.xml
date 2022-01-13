@@ -21,30 +21,52 @@ http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/fil
 		<http:listener-connection host="0.0.0.0" port="8081" />
 	</http:listener-config>
 	<flow name="maylin_escenario2Flow" doc:id="5df8e3d4-53b0-48eb-88a7-75039bd80e6b" >
-		<sftp:listener doc:name="On New or Updated File" doc:id="1d29c075-3f45-4f60-af41-7e95423ff895" config-ref="SFTP_Config" outputMimeType="text/json" watermarkEnabled="true" directory="/tester/">
+		<sftp:listener doc:name="On New or Updated File" doc:id="1d29c075-3f45-4f60-af41-7e95423ff895" config-ref="SFTP_Config" outputMimeType="text/csv" watermarkEnabled="true" directory="/">
 			<scheduling-strategy >
 				<fixed-frequency frequency="1" timeUnit="MINUTES" />
 			</scheduling-strategy>
-			<sftp:matcher filenamePattern="ciudadano.json"/>
+			<sftp:matcher filenamePattern="homes.csv"/>
 		</sftp:listener>
+		<ee:transform doc:name="Transform Message" doc:id="c3513e56-1fa9-4f7f-bc7f-fd7a0cec7b2b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
 		<batch:job jobName="maylin_escenario2Batch_Job" doc:id="150c81aa-5725-45ca-b27e-dfd8be59b649" >
 			<batch:process-records >
 				<batch:step name="Batch_Step" doc:id="118ebd4d-fab6-4d0e-a4cf-9263592d5b96" >
-					<set-variable value="#[payload.ciudadano]" doc:name="ciudadano" doc:id="b4e988f0-17a5-423c-b00a-6dbe989fe7c7" variableName="ciudadano"/>
-					<logger level="INFO" doc:name="Logger" doc:id="40e103ec-1b1e-4440-82e8-fa09af30fe28" />
+					<logger level="INFO" doc:name="Logger" doc:id="e5d607c5-0fee-454c-853d-ab89f7ebda88" message="#[payload]"/>
+					<crypto:jce-encrypt doc:name="Jce encrypt" doc:id="c665dc0b-dd13-4b90-9db2-37575871e7dd" algorithm="AES" config-ref="Crypto_Jce" keyId="AnyKeyID">
+						<ee:repeatable-file-store-stream inMemorySize="1024" />
+						<crypto:content ><![CDATA[#[output application/java
+---
+payload]]]></crypto:content>
+					</crypto:jce-encrypt>
+					<sftp:write doc:name="Write" doc:id="86bb279e-8c4e-41e6-a220-9f12531b5dca" config-ref="SFTP_Config" path="cifrado.txt" />
 				</batch:step>
 			</batch:process-records>
 			<batch:on-complete >
-				<logger level="INFO" doc:name="Logger" doc:id="91aedc55-f0e7-4228-a73b-aca29db3c912" />
+				<logger level="INFO" doc:name="Logger" doc:id="6c74019c-0723-4690-81fa-d6eb6ea8ab15" message="#[payload]"/>
 			</batch:on-complete>
 		</batch:job>
+		<logger level="INFO" doc:name="Logger" doc:id="d13d6710-9baf-42ee-896e-a5089eabb243" message="#[payload]"/>
 	</flow>
-	<flow name="maylin_escenario2Flow1" doc:id="ef924530-1b78-4e1d-86bd-2f9e79dc3c24" >
-		<http:listener doc:name="Listener" doc:id="57324135-366b-432d-8cec-02381b18546e" config-ref="HTTP_Listener_config" path="/cifrar"/>
-		<sftp:read doc:name="Read" doc:id="6aca232f-8758-4dff-93a7-d79053845d9e" config-ref="SFTP_Config" path="/tester/ciudadano.json"/>
-		<crypto:jce-encrypt doc:name="Jce encrypt" doc:id="c665dc0b-dd13-4b90-9db2-37575871e7dd" algorithm="AES" config-ref="Crypto_Jce" keyId="AnyKeyID">
-						<ee:repeatable-file-store-stream inMemorySize="1024" />
-					</crypto:jce-encrypt>
-		<sftp:write doc:name="Write" doc:id="86bb279e-8c4e-41e6-a220-9f12531b5dca" config-ref="SFTP_Config" path="cifrado.txt"/>
+	<flow name="maylin_escenario2Flow1" doc:id="e4cca387-a9e6-43ce-b73f-068569c91898" >
+		<http:listener doc:name="Listener" doc:id="84dcbba3-2157-42ba-8366-e5c7ecb35769" config-ref="HTTP_Listener_config" path="/cifrado"/>
+		<sftp:read doc:name="Read" doc:id="0c19d41c-24d5-470a-b201-8970f0452777" config-ref="SFTP_Config" path="/cifrado.txt" />
+		<crypto:jce-decrypt doc:name="Jce decrypt" doc:id="c8d0afaa-07bb-4bcc-96e8-d9b5a266f590" config-ref="Crypto_Jce" algorithm="AES" keyId="AnyKeyID" />
+		<ee:transform doc:name="Transform Message" doc:id="5f489a29-fb1b-47cb-94a5-9d2168ae3367" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+	payload
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
 	</flow>
 </mule>
