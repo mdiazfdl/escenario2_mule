@@ -20,6 +20,8 @@ Servidor de ftp:RebexTinySftpServer-Binaries-Latest v1.0.13
   User public keys:   	(disabled) 
   User root directory: 	C:\RebexTinySftpServer-Binaries-Latest\data
   Configuration file: 	C:\RebexTinySftpServer-Binaries-Latest\RebexTinySftpServer.exe.Config
+-------------------------------------------------------------------------------------------------
+ Database: Escenario2
   
 
 
