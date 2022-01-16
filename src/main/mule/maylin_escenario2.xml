@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:http="http://www.mulesoft.org/schema/mule/http"
-	xmlns:crypto="http://www.mulesoft.org/schema/mule/crypto"
-	xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:crypto="http://www.mulesoft.org/schema/mule/crypto" xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
 http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
 http://www.mulesoft.org/schema/mule/crypto http://www.mulesoft.org/schema/mule/crypto/current/mule-crypto.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
-http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
 	<sftp:config name="SFTP_Config" doc:name="SFTP Config" doc:id="4e8fc9a9-2417-494d-838d-554038d2ab13" >
 		<sftp:connection host="localhost" username="tester" password="password" />
 	</sftp:config>
@@ -20,6 +21,9 @@ http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/fil
 	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="07f8b0e9-8701-4053-b329-2663ef3347b3" >
 		<http:listener-connection host="0.0.0.0" port="8081" />
 	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="273284b1-670a-499a-b53b-9f5405b5e281" >
+		<db:generic-connection url=" jdbc:postgresql://localhost:5432/Escenario2" driverClassName="org.postgresql.Driver" user="postgres" password="postgres" />
+	</db:config>
 	<flow name="maylin_escenario2Flow" doc:id="5df8e3d4-53b0-48eb-88a7-75039bd80e6b" >
 		<sftp:listener doc:name="On New or Updated File" doc:id="1d29c075-3f45-4f60-af41-7e95423ff895" config-ref="SFTP_Config" outputMimeType="text/csv" watermarkEnabled="true" directory="/">
 			<scheduling-strategy >
@@ -38,35 +42,44 @@ payload]]></ee:set-payload>
 		<batch:job jobName="maylin_escenario2Batch_Job" doc:id="150c81aa-5725-45ca-b27e-dfd8be59b649" >
 			<batch:process-records >
 				<batch:step name="Batch_Step" doc:id="118ebd4d-fab6-4d0e-a4cf-9263592d5b96" >
-					<logger level="INFO" doc:name="Logger" doc:id="e5d607c5-0fee-454c-853d-ab89f7ebda88" message="#[payload]"/>
+					<set-variable value='#["/Achivos Cifrados/home_"++ random() ++ ".txt"]' doc:name="Set Variable" doc:id="8d20220f-dcf9-4862-9db5-21ce9b94fa97" variableName="Nombre" />
 					<crypto:jce-encrypt doc:name="Jce encrypt" doc:id="c665dc0b-dd13-4b90-9db2-37575871e7dd" algorithm="AES" config-ref="Crypto_Jce" keyId="AnyKeyID">
 						<ee:repeatable-file-store-stream inMemorySize="1024" />
 						<crypto:content ><![CDATA[#[output application/java
 ---
 payload]]]></crypto:content>
 					</crypto:jce-encrypt>
-					<sftp:write doc:name="Write" doc:id="86bb279e-8c4e-41e6-a220-9f12531b5dca" config-ref="SFTP_Config" path="cifrado.txt" />
+					<sftp:write doc:name="Write" doc:id="86bb279e-8c4e-41e6-a220-9f12531b5dca" config-ref="SFTP_Config" mode="CREATE_NEW" path="#[vars.Nombre]"/>
+					<sftp:read doc:name="Read" doc:id="0c19d41c-24d5-470a-b201-8970f0452777" config-ref="SFTP_Config" path="#[vars.Nombre]" />
+					<crypto:jce-decrypt doc:name="Jce decrypt" doc:id="c8d0afaa-07bb-4bcc-96e8-d9b5a266f590" config-ref="Crypto_Jce" algorithm="AES" keyId="AnyKeyID" />
+					<ee:transform doc:name="Transform Message" doc:id="b5ddc600-0ce7-465e-9ada-86edde841b23" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<db:insert doc:name="Insert" doc:id="00b8d17f-3bbd-493c-a926-9393d7b5c395" config-ref="Database_Config">
+						<db:sql><![CDATA[INSERT INTO mule(sell, list, living, rooms, beds, baths, age, acres, taxes)
+VALUES (:sell,:list,:living,:rooms,:beds,:baths,:age,:acres,:taxes)]]></db:sql>
+						<db:input-parameters><![CDATA[#[{
+'sell':payload.sell,
+'list':payload.list,
+'living':payload.living,
+'rooms':payload.rooms,
+'beds':payload.beds,
+'baths':payload.baths,
+'age':payload.age,
+'acres':payload.acres,
+'taxes':payload.taxes
+}]]]></db:input-parameters>
+					</db:insert>
 				</batch:step>
 			</batch:process-records>
-			<batch:on-complete >
-				<logger level="INFO" doc:name="Logger" doc:id="6c74019c-0723-4690-81fa-d6eb6ea8ab15" message="#[payload]"/>
+			<batch:on-complete>
+				<logger level="INFO" doc:name="Logger" doc:id="db20f213-ce98-4fd5-9e3b-f0d22e0fbe38" message="#[payload]" />
 			</batch:on-complete>
 		</batch:job>
-		<logger level="INFO" doc:name="Logger" doc:id="d13d6710-9baf-42ee-896e-a5089eabb243" message="#[payload]"/>
-	</flow>
-	<flow name="maylin_escenario2Flow1" doc:id="e4cca387-a9e6-43ce-b73f-068569c91898" >
-		<http:listener doc:name="Listener" doc:id="84dcbba3-2157-42ba-8366-e5c7ecb35769" config-ref="HTTP_Listener_config" path="/cifrado"/>
-		<sftp:read doc:name="Read" doc:id="0c19d41c-24d5-470a-b201-8970f0452777" config-ref="SFTP_Config" path="/cifrado.txt" />
-		<crypto:jce-decrypt doc:name="Jce decrypt" doc:id="c8d0afaa-07bb-4bcc-96e8-d9b5a266f590" config-ref="Crypto_Jce" algorithm="AES" keyId="AnyKeyID" />
-		<ee:transform doc:name="Transform Message" doc:id="5f489a29-fb1b-47cb-94a5-9d2168ae3367" >
-			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
-output application/json
----
-
-	payload
-]]></ee:set-payload>
-			</ee:message>
-		</ee:transform>
 	</flow>
 </mule>

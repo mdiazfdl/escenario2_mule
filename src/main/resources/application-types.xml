@@ -26,4 +26,5 @@ type home = Array<{|  Sell: Number,   " List": Number,   " Living": Number,   " 
       </types:output-event>
     </types:processor-declaration>
   </types:enrichment>
+  <types:enrichment select="#c8d0afaa-07bb-4bcc-96e8-d9b5a266f590"/>
 </types:mule>
