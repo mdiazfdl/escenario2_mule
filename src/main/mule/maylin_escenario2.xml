@@ -34,7 +34,7 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
 		<ee:transform doc:name="Transform Message" doc:id="c3513e56-1fa9-4f7f-bc7f-fd7a0cec7b2b" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
-output application/java
+output application/json
 ---
 payload]]></ee:set-payload>
 			</ee:message>
@@ -55,11 +55,13 @@ payload]]]></crypto:content>
 					<ee:transform doc:name="Transform Message" doc:id="b5ddc600-0ce7-465e-9ada-86edde841b23" >
 						<ee:message >
 							<ee:set-payload ><![CDATA[%dw 2.0
-output application/java
+input payload application/octet-stream
+output application/json
 ---
-payload]]></ee:set-payload>
+read(payload, "application/json")]]></ee:set-payload>
 						</ee:message>
 					</ee:transform>
+					<logger level="INFO" doc:name="Logger" doc:id="6c6f7e5e-88b7-4f58-8293-26611ef5ed1d" message="#[payload]"/>
 					<db:insert doc:name="Insert" doc:id="00b8d17f-3bbd-493c-a926-9393d7b5c395" config-ref="Database_Config">
 						<db:sql><![CDATA[INSERT INTO mule(sell, list, living, rooms, beds, baths, age, acres, taxes)
 VALUES (:sell,:list,:living,:rooms,:beds,:baths,:age,:acres,:taxes)]]></db:sql>

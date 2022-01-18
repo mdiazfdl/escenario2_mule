@@ -1,0 +1,26 @@
+{
+	"home": [
+		{
+			"sell": 1,
+			"list": 1,
+			"living": 1,
+			"rooms": 1,
+			"beds": 1,
+			"baths": 1,
+			"age": 1,
+			"acres": 1,
+			"taxes": 1
+		},
+		{
+			"sell": 1,
+			"list": 1,
+			"living": 1,
+			"rooms": 1,
+			"beds": 1,
+			"baths": 1,
+			"age": 1,
+			"acres": 1,
+			"taxes": 1
+		}
+	]
+}
