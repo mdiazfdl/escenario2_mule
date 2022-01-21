@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:file="http://www.mulesoft.org/schema/mule/file"
-	xmlns:http="http://www.mulesoft.org/schema/mule/http"
-	xmlns:crypto="http://www.mulesoft.org/schema/mule/crypto" xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:amqp="http://www.mulesoft.org/schema/mule/amqp" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:crypto="http://www.mulesoft.org/schema/mule/crypto" xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
 http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
 http://www.mulesoft.org/schema/mule/crypto http://www.mulesoft.org/schema/mule/crypto/current/mule-crypto.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
-http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/amqp http://www.mulesoft.org/schema/mule/amqp/current/mule-amqp.xsd">
 	<sftp:config name="SFTP_Config" doc:name="SFTP Config" doc:id="4e8fc9a9-2417-494d-838d-554038d2ab13" >
 		<sftp:connection host="localhost" username="tester" password="password" />
 	</sftp:config>
@@ -24,6 +25,9 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
 	<db:config name="Database_Config" doc:name="Database Config" doc:id="273284b1-670a-499a-b53b-9f5405b5e281" >
 		<db:generic-connection url=" jdbc:postgresql://localhost:5432/Escenario2" driverClassName="org.postgresql.Driver" user="postgres" password="postgres" />
 	</db:config>
+	<amqp:config name="AMQP_Config" doc:name="AMQP Config" doc:id="5ced55fb-e51d-4456-aa0b-00af7eb286e1" >
+		<amqp:connection host="localhost" username="guest" password="guest" />
+	</amqp:config>
 	<flow name="maylin_escenario2Flow" doc:id="5df8e3d4-53b0-48eb-88a7-75039bd80e6b" >
 		<sftp:listener doc:name="On New or Updated File" doc:id="1d29c075-3f45-4f60-af41-7e95423ff895" config-ref="SFTP_Config" outputMimeType="text/csv" watermarkEnabled="true" directory="/">
 			<scheduling-strategy >
@@ -31,7 +35,7 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
 			</scheduling-strategy>
 			<sftp:matcher filenamePattern="homes.csv"/>
 		</sftp:listener>
-		<ee:transform doc:name="Transform Message" doc:id="c3513e56-1fa9-4f7f-bc7f-fd7a0cec7b2b" >
+		<ee:transform doc:name="CSV to JSON" doc:id="c3513e56-1fa9-4f7f-bc7f-fd7a0cec7b2b" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
@@ -45,43 +49,60 @@ payload]]></ee:set-payload>
 					<set-variable value='#["/Achivos Cifrados/home_"++ random() ++ ".txt"]' doc:name="Set Variable" doc:id="8d20220f-dcf9-4862-9db5-21ce9b94fa97" variableName="Nombre" />
 					<crypto:jce-encrypt doc:name="Jce encrypt" doc:id="c665dc0b-dd13-4b90-9db2-37575871e7dd" algorithm="AES" config-ref="Crypto_Jce" keyId="AnyKeyID">
 						<ee:repeatable-file-store-stream inMemorySize="1024" />
-						<crypto:content ><![CDATA[#[output application/java
+						<crypto:content ><![CDATA[#[output application/json
 ---
 payload]]]></crypto:content>
 					</crypto:jce-encrypt>
 					<sftp:write doc:name="Write" doc:id="86bb279e-8c4e-41e6-a220-9f12531b5dca" config-ref="SFTP_Config" mode="CREATE_NEW" path="#[vars.Nombre]"/>
-					<sftp:read doc:name="Read" doc:id="0c19d41c-24d5-470a-b201-8970f0452777" config-ref="SFTP_Config" path="#[vars.Nombre]" />
-					<crypto:jce-decrypt doc:name="Jce decrypt" doc:id="c8d0afaa-07bb-4bcc-96e8-d9b5a266f590" config-ref="Crypto_Jce" algorithm="AES" keyId="AnyKeyID" />
-					<ee:transform doc:name="Transform Message" doc:id="b5ddc600-0ce7-465e-9ada-86edde841b23" >
-						<ee:message >
-							<ee:set-payload ><![CDATA[%dw 2.0
-input payload application/octet-stream
-output application/json
+					<amqp:publish doc:name="Publish" doc:id="1663f167-81a4-4a06-8302-47ca0bcaebb2" config-ref="AMQP_Config" exchangeName="amq.topic">
+						<amqp:message >
+							<amqp:body ><![CDATA[#[output application/json
 ---
-read(payload, "application/json")]]></ee:set-payload>
-						</ee:message>
-					</ee:transform>
-					<logger level="INFO" doc:name="Logger" doc:id="6c6f7e5e-88b7-4f58-8293-26611ef5ed1d" message="#[payload]"/>
-					<db:insert doc:name="Insert" doc:id="00b8d17f-3bbd-493c-a926-9393d7b5c395" config-ref="Database_Config">
-						<db:sql><![CDATA[INSERT INTO mule(sell, list, living, rooms, beds, baths, age, acres, taxes)
-VALUES (:sell,:list,:living,:rooms,:beds,:baths,:age,:acres,:taxes)]]></db:sql>
-						<db:input-parameters><![CDATA[#[{
-'sell':payload.sell,
-'list':payload.list,
-'living':payload.living,
-'rooms':payload.rooms,
-'beds':payload.beds,
-'baths':payload.baths,
-'age':payload.age,
-'acres':payload.acres,
-'taxes':payload.taxes
-}]]]></db:input-parameters>
-					</db:insert>
-				</batch:step>
+{
+	
+	"filename": vars.Nombre
+}]]]></amqp:body>
+						</amqp:message>
+					</amqp:publish>
+				
+</batch:step>
 			</batch:process-records>
 			<batch:on-complete>
 				<logger level="INFO" doc:name="Logger" doc:id="db20f213-ce98-4fd5-9e3b-f0d22e0fbe38" message="#[payload]" />
 			</batch:on-complete>
 		</batch:job>
 	</flow>
+	<flow name="maylin_escenario2Flow1" doc:id="132eda9f-f7ba-48c0-af7d-795f41750f7d" >
+		<amqp:listener doc:name="Listener" doc:id="8a21639c-1d6e-49aa-bda8-3a7de5a1762e" config-ref="AMQP_Config" queueName="homes"/>
+		<sftp:read doc:name="Read" doc:id="0c19d41c-24d5-470a-b201-8970f0452777" config-ref="SFTP_Config" path="#[payload.filename]" />
+		<crypto:jce-decrypt doc:name="Jce decrypt" doc:id="c8d0afaa-07bb-4bcc-96e8-d9b5a266f590" config-ref="Crypto_Jce" algorithm="AES" keyId="AnyKeyID" />
+		<ee:transform doc:name="Transform Message" doc:id="b5ddc600-0ce7-465e-9ada-86edde841b23">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+input payload application/octet-stream
+output application/json
+---
+read(payload, 'application/json')]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="bbbf3f25-d665-47aa-929b-1b4a1884064d" message="#[payload]" />
+		<db:insert doc:name="Insert" doc:id="00b8d17f-3bbd-493c-a926-9393d7b5c395" config-ref="Database_Config">
+						<db:sql><![CDATA[INSERT INTO home(sell,list,living,rooms,beds,baths,age,acres,taxes)
+VALUES (:sell,:list,:living,:rooms,:beds,:baths,:age,:acres,:taxes);]]></db:sql>
+						<db:input-parameters><![CDATA[#[output application/json
+---
+{
+	'sell': payload.Sell ,
+	'list': payload.List ,
+	'living': payload.Living ,
+	'rooms': payload.Rooms ,
+	'beds': payload.Beds ,
+	'baths': payload.Baths ,
+	'age': payload.Age ,
+	'acres': payload.Acres ,
+	'taxes':payload.Taxes 
+}]]]></db:input-parameters>
+					</db:insert>
+	</flow>
+
 </mule>
