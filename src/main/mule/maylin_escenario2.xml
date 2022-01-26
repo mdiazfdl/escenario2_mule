@@ -71,7 +71,16 @@ payload]]]></crypto:content>
 				<logger level="INFO" doc:name="Logger" doc:id="db20f213-ce98-4fd5-9e3b-f0d22e0fbe38" message="#[payload]" />
 			</batch:on-complete>
 		</batch:job>
-	</flow>
+		<error-handler>
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="fc37c4eb-6d8b-4767-bb35-dbfb07392593" type="AMQP:CREATION_NOT_ALLOWED, AMQP:EXCHANGE_NOT_FOUND, AMQP:ILLEGAL_BODY, AMQP:NO_CHANNEL_AVAILABLE, AMQP:PUBLISHING, AMQP:RETRY_EXHAUSTED, AMQP:UNROUTABLE_MESSAGE, CRYPTO:ENCRYPTION, CRYPTO:KEY, CRYPTO:MISSING_KEY, CRYPTO:PARAMETERS, SFTP:FILE_ALREADY_EXISTS, SFTP:FILE_LOCK, SFTP:ILLEGAL_CONTENT, SFTP:RETRY_EXHAUSTED, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+				<logger level="INFO" doc:name="Logger" doc:id="65555c78-0d67-4eed-ae1a-ddc3039a0ac4" message="#[payload]"/>
+			</on-error-continue>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="398ddd2f-b369-4f42-b91d-e20b81601752" type="AMQP:CONNECTIVITY, SFTP:ACCESS_DENIED, SFTP:CONNECTIVITY, SFTP:ILLEGAL_CONTENT, SFTP:ILLEGAL_PATH">
+				<logger level="INFO" doc:name="Logger" doc:id="2d51e5ef-7ef9-44a8-88d3-9621a5b6fa70" message="#[pyload]"/>
+			</on-error-propagate>
+		</error-handler>
+	
+</flow>
 	<flow name="maylin_escenario2Flow1" doc:id="132eda9f-f7ba-48c0-af7d-795f41750f7d" >
 		<amqp:listener doc:name="Listener" doc:id="8a21639c-1d6e-49aa-bda8-3a7de5a1762e" config-ref="AMQP_Config" queueName="homes"/>
 		<sftp:read doc:name="Read" doc:id="0c19d41c-24d5-470a-b201-8970f0452777" config-ref="SFTP_Config" path="#[payload.filename]" />
@@ -85,24 +94,32 @@ output application/json
 read(payload, 'application/json')]]></ee:set-payload>
 						</ee:message>
 					</ee:transform>
-		<logger level="INFO" doc:name="Logger" doc:id="bbbf3f25-d665-47aa-929b-1b4a1884064d" message="#[payload]" />
 		<db:insert doc:name="Insert" doc:id="00b8d17f-3bbd-493c-a926-9393d7b5c395" config-ref="Database_Config">
 						<db:sql><![CDATA[INSERT INTO home(sell,list,living,rooms,beds,baths,age,acres,taxes)
 VALUES (:sell,:list,:living,:rooms,:beds,:baths,:age,:acres,:taxes);]]></db:sql>
 						<db:input-parameters><![CDATA[#[output application/json
 ---
 {
-	'sell': payload.Sell ,
-	'list': payload.List ,
-	'living': payload.Living ,
-	'rooms': payload.Rooms ,
-	'beds': payload.Beds ,
-	'baths': payload.Baths ,
-	'age': payload.Age ,
-	'acres': payload.Acres ,
-	'taxes':payload.Taxes 
+	'sell': payload.Sell as Number,
+	'list': payload.List as Number,
+	'living': payload.Living as Number,
+	'rooms': payload.Rooms as Number,
+	'beds': payload.Beds as Number,
+	'baths': payload.Baths as Number,
+	'age': payload.Age as Number,
+	'acres': payload.Acres as Number,
+	'taxes': payload.Taxes as Number
 }]]]></db:input-parameters>
 					</db:insert>
-	</flow>
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="11f96af9-3af8-4f6d-84cd-a7c54a8e8ee9" type="DB:CONNECTIVITY, SFTP:ACCESS_DENIED, SFTP:CONNECTIVITY, SFTP:ILLEGAL_PATH">
+				<logger level="INFO" doc:name="Logger" doc:id="a2a11b45-4e41-4119-a73c-18df39d16a88" message="#[payload]"/>
+			</on-error-propagate>
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="a0056672-74e2-458d-8301-a5f27ae150ee" type="CRYPTO:DECRYPTION, CRYPTO:KEY, CRYPTO:MISSING_KEY, CRYPTO:PARAMETERS, CRYPTO:PASSPHRASE, DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION, DB:RETRY_EXHAUSTED, SFTP:FILE_LOCK, SFTP:ILLEGAL_PATH, SFTP:RETRY_EXHAUSTED, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+				<logger level="INFO" doc:name="Logger" doc:id="c7696b24-2688-4e80-a7fb-41203af236fc" message="#[payload]"/>
+			</on-error-continue>
+		</error-handler>
+	
+</flow>
 
 </mule>
