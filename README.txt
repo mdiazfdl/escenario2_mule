@@ -1,4 +1,4 @@
-Escenario 2, ya esto se va poniendo interesante:
+Escenario 2 para el trabajo con mule:
 
 Cada cierto tiempo un fichero es copiado a un SFTP, se desea implementar una solución que haga lo siguiente:
 1. Lea el contenido del fichero en el FTP que existe en ese momento y usando la funcionalidad batch extraiga dicho contenido.
